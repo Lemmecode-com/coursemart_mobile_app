@@ -432,8 +432,11 @@ class _HomeTabState extends State<_HomeTab> {
   Widget _buildStatGrid(
       BuildContext context, CourseProvider cp, double hp) {
     final enrolled = cp.courseCount;
-    final completed = cp.completedLecturesCount;
-    final remaining = cp.remainingLecturesCount;
+    // ✅ FIX (Issue #2): use COURSE-level completed/remaining counts
+    // (a course counts as completed only at 100% progress), NOT the
+    // lecture-level sums (cp.completedLecturesCount / remainingLecturesCount).
+    final completed = cp.coursesCompletedCount;
+    final remaining = cp.coursesRemainingCount;
     final overallPct = '${(cp.overallProgress * 100).toInt()}%';
     final columns = _Responsive.gridColumns(context);
     final aspectRatio = _Responsive.gridAspectRatio(context);

@@ -299,7 +299,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Center(
           child: _isLoading
               ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-              : const Text('Sign In  →', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
+              : const Text('Sign In', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
         ),
       ),
     );

@@ -231,9 +231,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               : Row(
             mainAxisSize: MainAxisSize.min,
             children: const [
-              Icon(Icons.send_rounded, color: Colors.white, size: 17),
               SizedBox(width: 8),
-              Text('Send Reset Link  →', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+              Text('Send Reset Link', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
             ],
           ),
         ),

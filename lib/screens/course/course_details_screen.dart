@@ -13,6 +13,7 @@ import '../../models/lecture.dart';
 import '../../providers/course_provider.dart';
 import '../../providers/lecture_provider.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/expandable_text.dart';
 import '../lecture/video_player_screen.dart';
 
 class CourseDetailsScreen extends StatefulWidget {
@@ -188,14 +189,18 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                                   color: Colors.white),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis),
+                          // ✅ FIX (Issue #4): full description with
+                          // Read More / Read Less toggle instead of a
+                          // hard 1-line ellipsis cutoff.
                           if (course?.description.isNotEmpty ?? false) ...[
                             const SizedBox(height: 2),
-                            Text(course?.description ?? '',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white.withOpacity(0.6)),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis),
+                            ExpandableText(
+                              course?.description ?? '',
+                              trimLines: 2,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withOpacity(0.6)),
+                            ),
                           ],
                           const SizedBox(height: 8),
                           Row(
@@ -274,24 +279,48 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             _buildInfoRow(context, 'Duration', '${course.duration} Hours'),
             const SizedBox(height: 10),
           ],
-          _buildInfoRow(context, 'Lectures', '${course.totalLectures}'),
-          const SizedBox(height: 10),
-          _buildInfoRow(context, 'Progress', '${course.progress}%'),
-          const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(100),
-            child: LinearProgressIndicator(
-                value: course.progressDecimal,
-                minHeight: 8,
-                backgroundColor: AppColors.progressBarBgOf(context),
-                valueColor:
-                const AlwaysStoppedAnimation(AppColors.cyan)),
+          // ✅ FIX (Issue #3): use the ACTUAL fetched lecture count from
+          // LectureProvider (lp.lectureCount) instead of course.totalLectures.
+          // course.totalLectures comes from the course/backend record and can
+          // drift out of sync with what LectureProvider actually returns
+          // (e.g. a hidden/removed lecture still counted on the backend),
+          // which is why "4" was shown here while only 3 lectures were
+          // actually listed below.
+          Consumer<LectureProvider>(
+            builder: (context, lp, _) {
+              final actualLectureCount =
+              lp.lectureCount > 0 ? lp.lectureCount : course.totalLectures;
+              return Column(
+                children: [
+                  _buildInfoRow(
+                      context, 'Lectures', '$actualLectureCount'),
+                  const SizedBox(height: 10),
+                  _buildInfoRow(
+                      context, 'Progress', '${course.progress}%'),
+                  const SizedBox(height: 14),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(100),
+                    child: LinearProgressIndicator(
+                        value: course.progressDecimal,
+                        minHeight: 8,
+                        backgroundColor:
+                        AppColors.progressBarBgOf(context),
+                        valueColor: const AlwaysStoppedAnimation(
+                            AppColors.cyan)),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                        '${course.completedLectures} of $actualLectureCount lectures completed',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.text2Of(context))),
+                  ),
+                ],
+              );
+            },
           ),
-          const SizedBox(height: 8),
-          Text(
-              '${course.completedLectures} of ${course.totalLectures} lectures completed',
-              style: TextStyle(
-                  fontSize: 11, color: AppColors.text2Of(context))),
         ],
       ),
     );

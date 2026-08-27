@@ -118,6 +118,16 @@ class CourseProvider extends ChangeNotifier {
     return completedLecturesCount / total;
   }
 
+  // ✅ NEW: Course-level completed / remaining counts (fix for Issue #2)
+  // A course counts as "completed" only when it has reached 100% progress.
+  // (completedLecturesCount/remainingLecturesCount above are LECTURE-level
+  // sums across all courses and should NOT be used for the dashboard's
+  // "Completed" / "Remaining" course stat cards.)
+  int get coursesCompletedCount =>
+      _courses.where((course) => course.progress >= 100).length;
+
+  int get coursesRemainingCount => courseCount - coursesCompletedCount;
+
   @override
   void dispose() {
     super.dispose();

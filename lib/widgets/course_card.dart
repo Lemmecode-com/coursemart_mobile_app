@@ -8,6 +8,7 @@ import 'package:shimmer/shimmer.dart';
 import '../config/api_config.dart';
 import '../models/course.dart';
 import '../utils/app_colors.dart';
+import 'expandable_text.dart';
 
 class CourseCard extends StatelessWidget {
   final Course course;
@@ -61,15 +62,16 @@ class CourseCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
 
-                  // Description
-                  Text(
+                  // ✅ FIX (Issue #4): full description with
+                  // Read More / Read Less toggle instead of a hard
+                  // 2-line ellipsis cutoff.
+                  ExpandableText(
                     course.description,
+                    trimLines: 2,
                     style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.text2,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 12),
 
