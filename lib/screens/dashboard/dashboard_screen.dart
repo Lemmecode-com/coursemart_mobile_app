@@ -2,7 +2,7 @@
 ///
 /// ✅ Dark Mode / Light Mode support
 /// ✅ Responsive layout (phone + tablet)
-/// ✅ Landscape view proper
+/// ✅ Landscape view proper (phone landscape सुद्धा grid-aware)
 /// ✅ Safe Area handled
 library;
 
@@ -31,14 +31,41 @@ class _Responsive {
   static bool isLandscape(BuildContext context) =>
       MediaQuery.of(context).orientation == Orientation.landscape;
 
+  // ✅ FIX: फोन landscape मध्ये आहे का (tablet नाही, पण rotate केलेला फोन).
+  // shortestSide rotate केल्यावर बदलत नाही, त्यामुळे आधी landscape phone वर
+  // सुद्धा column count portrait सारखाच (2) राहायचा — इथून पुढे तो वेगळा गणला जाईल.
+  static bool isLandscapePhone(BuildContext context) =>
+      isLandscape(context) && !isTablet(context);
+
   static double horizontalPadding(BuildContext context) =>
       isTablet(context) ? 24.0 : 16.0;
 
-  static int gridColumns(BuildContext context) =>
-      isTablet(context) ? 4 : 2;
+  // ✅ FIX: landscape phone वर जास्त horizontal space असतो, त्यामुळे
+  // tablet सारखेच 4 columns दिले आहेत (आधी हे फक्त portrait सारखे 2 राहायचे).
+  static int gridColumns(BuildContext context) {
+    if (isTablet(context)) return 4;
+    if (isLandscapePhone(context)) return 4;
+    return 2;
+  }
 
-  static double gridAspectRatio(BuildContext context) =>
-      isTablet(context) ? 1.4 : 1.5;
+  // ✅ FIX (overflow bug): आधी aspectRatio (width/height) वापरून card ची
+  // height ठरवत होतो — landscape phone वर width कमी असल्याने height सुद्धा
+  // कमी व्हायची आणि आतला मजकूर मावायचा नाही ("BOTTOM OVERFLOWED" error).
+  // आता width कितीही असो, height नेहमी FIXED (130) ठेवली आहे — त्यामुळे
+  // content कधीच overflow होणार नाही.
+  static double statCardHeight(BuildContext context) => 130.0;
+
+  // ✅ FIX: course list — आधी फक्त tablet वर grid दाखवायचं, landscape phone
+  // वर सुद्धा single-column stack व्हायचं. आता landscape phone वरही grid वापरतो.
+  static bool useGridForCourseList(BuildContext context) =>
+      isTablet(context) || isLandscapePhone(context);
+
+  // ✅ FIX (overflow अजूनही येत होता): 190/230 height सुद्धा कमी पडत होती —
+  // CourseCard मध्ये thumbnail + title + description + progress + lecture
+  // count एवढं सगळं मावण्यासाठी जास्त height लागते. आता जास्त safe margin
+  // ठेवून height वाढवली आहे.
+  static double courseCardHeight(BuildContext context) =>
+      isTablet(context) ? 300.0 : 340.0;
 }
 
 // ── Dashboard Shell ───────────────────────────────────────────────────────────
@@ -121,7 +148,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return SafeArea(
       right: false,
       child: Container(
-        width: 72,
+        width: 80,
         decoration: BoxDecoration(
           color: isDark ? AppColors.cardDark : AppColors.card,
           boxShadow: [
@@ -204,12 +231,21 @@ class _NavItem extends StatelessWidget {
               color: active ? AppColors.cyan : AppColors.text2Of(context),
             ),
             const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: active ? AppColors.cyan : AppColors.text2Of(context),
+            // ✅ FIX: landscape side nav ची width कमी (72px) असल्याने
+            // "Courses" सारखे शब्द "Cour"/"se" असे 2 ओळींत तुटायचे.
+            // आता FittedBox मुळे text नेहमी एकाच ओळीत राहील, गरज पडल्यास
+            // आपोआप थोडा लहान होईल — पण कधीच wrap होणार नाही.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: active ? AppColors.cyan : AppColors.text2Of(context),
+                ),
               ),
             ),
           ],
@@ -251,7 +287,7 @@ class _HomeTabState extends State<_HomeTab> {
                 return RefreshIndicator(
                   onRefresh: () => courseProvider.refresh(),
                   color: AppColors.cyan,
-                  child: _buildPortraitContent(context, courseProvider, hp),
+                  child: _buildContent(context, courseProvider, hp),
                 );
               },
             ),
@@ -261,7 +297,10 @@ class _HomeTabState extends State<_HomeTab> {
     );
   }
 
-  Widget _buildPortraitContent(
+  // ✅ FIX: नाव "Portrait" वरून "Content" केलं आहे — आतमधले sub-widgets
+  // (_buildStatGrid, _buildCourseList) आता landscape-phone-aware असल्याने
+  // हे एकच content दोन्ही orientation ला व्यवस्थित responsive राहतं.
+  Widget _buildContent(
       BuildContext context, CourseProvider cp, double hp) {
     return ListView(
       padding: EdgeInsets.zero,
@@ -439,17 +478,19 @@ class _HomeTabState extends State<_HomeTab> {
     final remaining = cp.coursesRemainingCount;
     final overallPct = '${(cp.overallProgress * 100).toInt()}%';
     final columns = _Responsive.gridColumns(context);
-    final aspectRatio = _Responsive.gridAspectRatio(context);
+    final cardHeight = _Responsive.statCardHeight(context);
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: hp),
-      child: GridView.count(
-        crossAxisCount: columns,
+      child: GridView(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: aspectRatio,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columns,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          mainAxisExtent: cardHeight,
+        ),
         children: [
           _StatCard(
             icon: Icons.menu_book_rounded,
@@ -570,23 +611,35 @@ class _HomeTabState extends State<_HomeTab> {
       );
     }
 
-    if (_Responsive.isTablet(context)) {
+    // ✅ FIX: आधी फक्त tablet वर grid दिसायचं, landscape phone वर
+    // single-column मध्येच stack व्हायचं (मोकळी जागा वाया जायची).
+    if (_Responsive.useGridForCourseList(context)) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: hp),
-        child: GridView.count(
-          crossAxisCount: 2,
+        child: GridView(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.8,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            mainAxisExtent: _Responsive.courseCardHeight(context),
+          ),
           children: cp.filteredCourses.map((course) {
-            return CourseCard(
-              course: course,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => CourseDetailsScreen(courseId: course.id),
+            // ✅ FIX (Read More overflow): grid cell ची height fixed आहे,
+            // पण "Read More" दाबल्यावर description मोठा होऊन content
+            // त्या height च्या बाहेर जायचं. आता card ला SingleChildScrollView
+            // मध्ये wrap केलं आहे — expand झाल्यावर card च्या आतच scroll
+            // होईल, overflow येणार नाही.
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: CourseCard(
+                course: course,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CourseDetailsScreen(courseId: course.id),
+                  ),
                 ),
               ),
             );
@@ -686,7 +739,8 @@ class _CoursesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hp = _Responsive.horizontalPadding(context);
-    final isTablet = _Responsive.isTablet(context);
+    // ✅ FIX: आधी `isTablet` वापरायचा, landscape phone grid मध्ये दिसत नव्हता.
+    final useGrid = _Responsive.useGridForCourseList(context);
 
     return Scaffold(
       backgroundColor: AppColors.bgOf(context),
@@ -709,22 +763,27 @@ class _CoursesTab extends StatelessWidget {
                       child: CircularProgressIndicator(color: AppColors.cyan),
                     ),
                   )
-                else if (isTablet)
+                else if (useGrid)
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: hp),
-                    child: GridView.count(
-                      crossAxisCount: 2,
+                    child: GridView(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 14,
-                      childAspectRatio: 1.8,
-                      children: cp.courses.map((c) => CourseCard(
-                        course: c,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CourseDetailsScreen(courseId: c.id),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 14,
+                        crossAxisSpacing: 14,
+                        mainAxisExtent: _Responsive.courseCardHeight(context),
+                      ),
+                      children: cp.courses.map((c) => SingleChildScrollView(
+                        physics: const ClampingScrollPhysics(),
+                        child: CourseCard(
+                          course: c,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CourseDetailsScreen(courseId: c.id),
+                            ),
                           ),
                         ),
                       )).toList(),

@@ -78,18 +78,21 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Widget _buildLandscape(BuildContext context, course) {
-    return Column(
-      children: [
-        _buildHeader(context, course),
-        Expanded(
-          // ✅ RefreshIndicator added
-          child: RefreshIndicator(
-            onRefresh: () => context
-                .read<LectureProvider>()
-                .fetchLectures(courseId: widget.courseId),
-            color: AppColors.cyan,
-            child: ListView(
-              padding: const EdgeInsets.all(16),
+    // ✅ Landscape मध्ये header सुद्धा scroll च्या आतच ठेवला आहे
+    // (fixed नाही) — त्यामुळे संपूर्ण page (header + info + lectures)
+    // एकत्र scroll होते.
+    return RefreshIndicator(
+      onRefresh: () => context
+          .read<LectureProvider>()
+          .fetchLectures(courseId: widget.courseId),
+      color: AppColors.cyan,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          _buildHeader(context, course),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
                 _buildCourseInfoCard(context, course),
                 const SizedBox(height: 16),
@@ -98,8 +101,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
               ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
