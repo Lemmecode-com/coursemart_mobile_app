@@ -4,6 +4,7 @@
 /// ✅ Responsive layout (phone + tablet)
 /// ✅ SharedPreferences — एकदाच दाखवतो
 /// ✅ App theme शी match
+/// ✅ फक्त ह्या screen पुरतं Portrait lock (landscape disable)
 library;
 
 import 'package:flutter/material.dart';
@@ -70,6 +71,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   void initState() {
     super.initState();
+
+    // ── फक्त ह्या screen पुरतं Portrait lock (landscape disable) ──
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -84,6 +92,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   void dispose() {
+    // ── ह्या screen मधून बाहेर जाताना सगळे orientations परत allow करा ──
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
     _pageController.dispose();
     _animController.dispose();
     super.dispose();
