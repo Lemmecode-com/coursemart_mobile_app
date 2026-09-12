@@ -139,8 +139,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-        systemNavigationBarColor:
-        isDark ? AppColors.bgDark : AppColors.bg,
+        systemNavigationBarColor: Colors.transparent,
         systemNavigationBarIconBrightness:
         isDark ? Brightness.light : Brightness.dark,
       ),

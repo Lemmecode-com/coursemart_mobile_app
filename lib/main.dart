@@ -91,7 +91,7 @@ class CourseMartApp extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: AppColors.primary,
+          statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
         ),
       ),
@@ -204,7 +204,7 @@ class CourseMartApp extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: AppColors.primary,
+          statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
         ),
       ),
@@ -365,9 +365,9 @@ class LoadingScreen extends StatelessWidget {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
-        statusBarColor: AppColors.primary,
+        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: AppColors.bgDark,
+        systemNavigationBarColor: Colors.transparent,
         systemNavigationBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(

@@ -213,9 +213,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final overlayStyle = SystemUiOverlayStyle(
-      statusBarColor: AppColors.primary,
+      statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: AppColors.cardOf(context),
+      systemNavigationBarColor: Colors.transparent,
       systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
     );
 

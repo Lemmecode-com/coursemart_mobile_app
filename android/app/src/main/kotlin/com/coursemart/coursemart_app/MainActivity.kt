@@ -35,7 +35,6 @@ class MainActivity : FlutterActivity() {
 
     private fun saveToDownloads(fileName: String, bytes: ByteArray) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Android 10+ : MediaStore — permission ची गरज नाही
             val values = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, fileName)
                 put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
@@ -52,7 +51,6 @@ class MainActivity : FlutterActivity() {
             values.put(MediaStore.Downloads.IS_PENDING, 0)
             resolver.update(uri, values, null, null)
         } else {
-            // Android 9 आणि खालच्या versions साठी
             val downloadsDir = Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_DOWNLOADS
             )
